@@ -1,24 +1,16 @@
 import numpy as np
 import pandas as pd
-import skfuzzy as fuzz
 from mpl_toolkits.mplot3d import Axes3D
 import matplotlib.pyplot as plt
-from faker import Faker
-
-fake = Faker()
+from sklearn.cluster import KMeans
 
 sentences = []
 
 vowels = ['a','e','i','o','u','y']
 
-for i in range(10):
-    sentences.append(fake.sentence())
-
 with open("pp.txt", "r", encoding='utf-8') as f:
     content = f.read()
     sentences = [x.strip() for x in content.replace('\n',' ').replace(';','.').replace('_','').replace('"','.').replace('“','.').replace('”','.').split('.') if len(x.strip().split()) > 5]
-    for l in sentences:
-        print(l)
 
 def est_syl(word):
     if len(word) == 1:
@@ -37,51 +29,62 @@ def mk_datapoint(sentence):
     avg = np.mean(list(map(lambda x: len(x), sentence)))
     return [words,avg,syls]
 
-datapoints = list(map(lambda x: mk_datapoint(x), sentences))
-for dp in datapoints:
-    print(dp)
+def get_cmap(n, name='hsv'):
+    return plt.cm.get_cmap(name, n)
 
-print(len(datapoints))
+def show_plot(nclusters, datapoints):
+    df = pd.DataFrame(data=np.array(datapoints))
 
-num_words = [x[0] for x in datapoints]
-avg_l = [x[1] for x in datapoints]
-num_syl = [x[2] for x in datapoints]
+    kmeans = KMeans(n_clusters=nclusters)
+    kmeans.fit(df)
 
-min_num_words = min(num_words)
-max_num_words = max(num_words)
-min_avg_l = min(avg_l)
-max_avg_l = max(avg_l)
-min_num_syl = min(num_syl)
-max_num_syl = max(num_syl)
+    labels = kmeans.predict(df)
 
-#np.random.seed(123)
-k = 4
+    centroids = kmeans.cluster_centers_
+    cmap = get_cmap(nclusters)
+    colmap = {
+        i: cmap(i)
+        for i in range(nclusters)
+    }
 
-centroids = {
-    i+1: [np.random.randint(min_num_words, max_num_words+1),
-          np.random.ranf() * max_avg_l + min_avg_l,
-          np.random.randint(min_num_syl, max_num_syl+1)]
-    for i in range(k)
+    fig = plt.figure()
+    colors = list(map(lambda x: colmap[x], labels))
+
+    ax = fig.add_subplot(111, projection='3d')
+    ax.scatter(df[0], df[1], df[2], color=colors, alpha=0.5, edgecolor='k')
+
+    for idx, centroid in enumerate(centroids):
+        ax.scatter(*centroid, color=colmap[idx])
+
+    ax.set_xlabel('Num_Words')
+    ax.set_ylabel('Avg_L')
+    ax.set_zlabel('Num_Syl')
+
+    plt.show()
+
+    return df
+
+def kcluster(nclusters, datapoints):
+
+    df = pd.DataFrame(data=np.array(datapoints))
+
+    kmeans = KMeans(n_clusters=nclusters)
+    kmeans.fit(df)
+
+    labels = kmeans.predict(df)
+
+    centroids = kmeans.cluster_centers_
+
+    return list(labels)
+
+chords = kcluster(6, list(map(lambda x: mk_datapoint(x), sentences)))
+
+d = {
+    i: 0
+    for i in range(6)
 }
 
-C = np.array(datapoints)
-df = pd.DataFrame(data=C)
-print(df)
-fig = plt.figure()
-ax = fig.add_subplot(111, projection='3d')
-ax.scatter(df[0], df[1], df[2], color='k')
+for c in chords:
+    d[c] += 1
 
-colmap = {1: 'r', 2: 'g', 3: 'b', 4: 'r'}
-for i in centroids.keys():
-    ax.scatter(*centroids[i], color=colmap[i])
-
-ax.set_xlabel('Num_Words')
-ax.set_ylabel('Avg_L')
-ax.set_zlabel('Num_Syl')
-
-plt.show()
-
-#print(est_syl("vial"))
-#print(sentences)
-#print(list(map(lambda x: list(map(lambda y: est_syl(y), x.split())), sentences)))
-#print(list(map(lambda x: list(map(lambda y: nsyl(y), x.split())), sentences)))
+print(np.random.choice(list(d.keys()), 200, p=[x / len(sentences) for x in list(d.values())]))
