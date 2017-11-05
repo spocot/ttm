@@ -34,7 +34,7 @@ class Genre:
     g_maj7 = [55, 59, 50, 53]
     c_maj7 = [48, 52, 55, 59]
 
-    chord_prog_pop = [c_maj, a_min, f_maj, g_maj]
+    chord_prog_pop = [c_maj, a_min, f_maj, g_maj, d_maj7, g_maj7, c_maj7]
 
     track = 0
     channel = 7
@@ -134,7 +134,7 @@ def kcluster(nclusters, datapoints):
 
 dpoints = list(map(lambda x: mk_datapoint(x), sentences))
 
-cs = Genre.chord_prog_pop + [Genre.e_min, Genre.c_min]
+cs = Genre.chord_prog_pop
 
 chords = kcluster(len(cs), dpoints)
 
@@ -148,19 +148,25 @@ durations = [dp[2] for dp in dpoints]
 min_d = np.min(durations)
 max_d = np.max(durations)
 
-durations = [round(4 * (d - min_d)/(max_d - min_d))/4 + 0.75 for d in durations]
-
+durations = [round(4 * (d - min_d)/(max_d - min_d))/4 * 10 + 0.5 for d in durations]
+print(durations)
 for c in chords:
     d[c] += 1
 
-song = np.random.choice(list(d.keys()), 300, p=[x / len(sentences) for x in list(d.values())])
-l = list(range(len(song)))
+#song = np.random.choice(list(d.keys()), 300, p=[x / len(sentences) for x in list(d.values())])
+l = list(range(len(chords)))
+plt.scatter(l,chords)
+plt.plot(l, chords)
+plt.show()
+'''
+for i in range(1, len(song)-1):
+    v = np.mean([song[i-1], song[i], song[i+1]])
+    song[i-1] = song[i] = song[i+1] = v
 xnew = np.linspace(0,len(l),100)
 chord_smooth = spline(l,song,xnew)
 plt.scatter(xnew,chord_smooth)
-plt.plot(l,song)
-plt.show()
-'''chord_prog = [cs[i] for i in song]
+plt.plot(xnew, chord_smooth)
+plt.show()'''
+chord_prog = [cs[i] for i in chords]
 g = Genre()
 g.make_midi(chord_prog, durations)
-'''
