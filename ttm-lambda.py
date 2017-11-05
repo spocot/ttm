@@ -59,10 +59,9 @@ sentences = []
 vowels = ['a','e','i','o','u','y']
 
 #read in large text file, sanitize input
-with open("dec.txt", "r", encoding='utf-8') as f:
+with open("odyssey.txt", "r", encoding='utf-8') as f:
     content = f.read()
     sentences = [x.strip() for x in content.replace('\n',' ').replace(';','.').replace(':','.').replace('_','').replace('"','.').replace('“','.').replace('”','.').split('.') if len(x.strip().split()) > 5]
-    print(content.replace('\n',' ').replace(';','.').replace(':','.').replace('_','').replace('"','.').replace('“','.').replace('”','.'))
 
 #method to estimate the number of syllables in a word (accurate to +/- 1 syllable)
 def est_syl(word):
